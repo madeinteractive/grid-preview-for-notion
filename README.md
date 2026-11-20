@@ -1,4 +1,4 @@
-# Instagram Grid Preview for Notion · by Made Interactive
+# Grid Preview for Notion
 
 An Instagram-style feed preview for your Notion content calendar: profile, highlights, pinned posts, carousels, videos and an optional client approval button.
 
