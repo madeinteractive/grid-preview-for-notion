@@ -6,7 +6,7 @@ An Instagram-style feed preview for your Notion content calendar: profile, highl
 
 ## What you need
 
-- The Instagram Grid Preview Notion template (included with your purchase), duplicated into your Notion
+- The Grid Preview + Content Calendar Notion template (included with your purchase), duplicated into your Notion
 - A free Notion connection key
 - Free GitHub and Netlify accounts
 
