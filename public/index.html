@@ -1,0 +1,702 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Grid Preview</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap">
+<style>
+:root{
+  --bg:#ffffff; --fg:#121212; --muted:#737373; --line:#ececec; --chip:#f2f2f2; --ring:#dedede;
+  --accent:#262626; --tile:#efefef; --overlay:rgba(0,0,0,.55); --panel:#ffffff;
+  --igblue:#0095f6; --dot:#c7c7c7; --ok:#2f8a55; --okbg:#e3f2e8;
+  --s-draft:#a39a98; --s-review:#d9a521; --s-changes:#d2473f; --s-approved:#3f9a62; --s-scheduled:#4a7fd1; --s-published:#7d7d7d;
+  --ui:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  color-scheme:light;
+}
+:root[data-theme="dark"]{
+  --bg:#0c0c0c; --fg:#f5f5f5; --muted:#a3a3a3; --line:#262626; --chip:#1c1c1c; --ring:#363636; --tile:#1c1c1c; --overlay:rgba(0,0,0,.7); --panel:#161616; --dot:#4a4a4a; --accent:#e0e0e0; --ok:#7ed3a0; --okbg:#173426; color-scheme:dark}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0c0c0c; --fg:#f5f5f5; --muted:#a3a3a3; --line:#262626; --chip:#1c1c1c; --ring:#363636; --tile:#1c1c1c; --overlay:rgba(0,0,0,.7); --panel:#161616; --dot:#4a4a4a; --accent:#e0e0e0; --ok:#7ed3a0; --okbg:#173426; color-scheme:dark}}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--fg);font-family:var(--ui);font-size:14px;line-height:1.4;padding:16px}
+[hidden]{display:none!important}
+.wrap{max-width:440px;margin:0 auto}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.top{display:flex;align-items:center;gap:8px;margin-bottom:14px}
+.handle{font-weight:600;font-size:16px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pill{display:inline-flex;align-items:center;gap:6px;border:0;background:var(--chip);border-radius:999px;padding:7px 12px;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase}
+.icon{width:32px;height:32px;border-radius:50%;border:0;background:var(--chip);display:grid;place-items:center;flex:none}
+.icon svg,.pill svg{width:15px;height:15px}
+.spin svg{animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.profile{display:flex;gap:16px;align-items:center;margin-bottom:16px}
+.avatar{width:84px;height:84px;border-radius:50%;flex:none;background:var(--chip);border:1px solid var(--ring);display:grid;place-items:center;overflow:hidden;font-weight:600;font-size:26px;color:var(--accent)}
+.avatar img,.hl .c img{width:100%;height:100%;object-fit:cover;display:block;border-radius:50%}
+.pinfo{min-width:0}
+.pname{font-weight:600}
+.pcat{color:var(--muted);font-size:13px}
+.pbio{white-space:pre-line;margin-top:2px;overflow-wrap:anywhere}
+.plink{color:var(--accent);font-weight:500;font-size:13px;text-decoration:none;overflow-wrap:anywhere}
+.stats{margin-top:6px;font-size:13px;color:var(--muted)}
+.stats b{color:var(--fg)}
+.hls{display:flex;gap:14px;overflow-x:auto;padding:4px 2px 10px;margin-bottom:6px;scrollbar-width:none}
+.hl{flex:none;width:66px;text-align:center;font-size:12px}
+.hl .c{width:62px;height:62px;margin:0 auto 5px;border-radius:50%;border:1px solid var(--ring);padding:3px}
+.hl .c i{display:grid;place-items:center;width:100%;height:100%;border-radius:50%;background:var(--accent);color:#fff;font-style:normal;font-weight:600;font-size:20px}
+.hl small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+button.hl{border:0;background:none;padding:0;color:inherit}
+button.hl:hover .c{border-color:var(--muted)}
+/* Story viewer */
+.scrim.story-scrim{background:rgba(10,8,9,.92)}
+.story{position:relative;width:min(100%, calc(88vh * 9 / 16));max-width:400px;aspect-ratio:9/16;max-height:88vh;border-radius:12px;overflow:hidden;background:#111;color:#fff;touch-action:none;user-select:none;-webkit-user-select:none}
+.story .media{position:absolute;inset:0}
+.story .media img,.story .media video{width:100%;height:100%;object-fit:cover;display:block;-webkit-user-drag:none;pointer-events:none}
+.story .shade{position:absolute;inset:0 0 auto;height:110px;background:linear-gradient(rgba(0,0,0,.45),transparent);pointer-events:none}
+.story .bars{position:absolute;top:10px;left:10px;right:10px;display:flex;gap:3px}
+.story .bars span{flex:1;height:2.5px;border-radius:2px;background:rgba(255,255,255,.35);overflow:hidden}
+.story .bars b{display:block;height:100%;width:0;background:#fff}
+.story .head{position:absolute;top:22px;left:10px;right:10px;display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;text-shadow:0 1px 2px rgba(0,0,0,.4)}
+.story .head .av{width:30px;height:30px;border-radius:50%;overflow:hidden;flex:none;background:var(--accent);display:grid;place-items:center;font-size:11px}
+.story .head .av img{width:100%;height:100%;object-fit:cover}
+.story .head .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.story .sbtn{width:32px;height:32px;border:0;border-radius:50%;background:transparent;color:#fff;display:grid;place-items:center;padding:0;flex:none;filter:drop-shadow(0 1px 2px rgba(0,0,0,.5))}
+.story .sbtn svg{width:20px;height:20px}
+.story .paused{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;background:rgba(0,0,0,.5);padding:4px 10px;border-radius:999px}
+.story .tap{position:absolute;inset:64px 0 0 0;cursor:pointer}
+.tabs{display:flex;justify-content:center;border-top:1px solid var(--line);margin-bottom:2px}
+.tabs div{padding:10px 26px;border-top:1px solid var(--fg);margin-top:-1px}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2px}
+.tile{position:relative;aspect-ratio:4/5;max-width:100%;overflow:hidden;border:0;padding:0;background:var(--tile)}
+.tile img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.tile .ph{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:flex-end;padding:9px;text-align:left;color:var(--muted)}
+.tile .ph b{color:var(--fg);font-weight:600;font-size:12px;line-height:1.2}
+.tile .ph span{font-size:10px;letter-spacing:.06em;text-transform:uppercase;margin-top:3px}
+.tile:hover img{filter:brightness(.93)}
+.dot{position:absolute;bottom:7px;left:7px;width:9px;height:9px;border-radius:50%;border:1.5px solid #fff;box-shadow:0 0 2px rgba(0,0,0,.35)}
+.pin{position:absolute;top:6px;left:6px;width:18px;height:18px;color:#fff;filter:drop-shadow(0 1px 2px rgba(0,0,0,.5))}
+.multi{position:absolute;top:7px;right:7px;width:18px;height:18px;color:#fff;filter:drop-shadow(0 1px 2px rgba(0,0,0,.55))}
+.skel{background:linear-gradient(90deg,var(--chip),var(--line),var(--chip));background-size:200% 100%}
+@media (prefers-reduced-motion:no-preference){.skel{animation:shimmer 1.2s linear infinite}}
+@keyframes shimmer{to{background-position:-200% 0}}
+.rows{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:14px;font-size:12px;color:var(--muted);flex-wrap:wrap}
+.seg{display:inline-flex;background:var(--chip);border-radius:999px;padding:3px}
+.seg button{border:0;background:none;padding:5px 12px;border-radius:999px;font-size:12px}
+.seg button[aria-pressed="true"]{background:var(--bg);color:var(--fg);font-weight:600;box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 12px;margin-top:12px;font-size:11px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+.legend i{width:8px;height:8px;border-radius:50%}
+.msg{background:var(--chip);border-radius:12px;padding:14px;font-size:13px}
+.msg b{display:block;margin-bottom:4px}
+.empty{grid-column:1/-1;padding:28px 12px;text-align:center;color:var(--muted);font-size:13px}
+.scrim{position:fixed;inset:0;background:var(--overlay);display:grid;place-items:center;padding:16px;z-index:20}
+.sheet{background:var(--panel);border-radius:16px;width:100%;max-width:400px;max-height:92vh;overflow:auto}
+.sheet .big{aspect-ratio:4/5;max-width:100%;position:relative;background:var(--tile);overflow:hidden}
+.track{display:flex;width:100%;height:100%;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;overscroll-behavior-x:contain}
+.track::-webkit-scrollbar{display:none}
+.slide{flex:0 0 100%;height:100%;scroll-snap-align:center;scroll-snap-stop:always}
+.slide img{width:100%;height:100%;object-fit:cover;display:block;user-select:none;-webkit-user-drag:none}
+.slide.vid{background:#000}
+.slide video{width:100%;height:100%;object-fit:contain;display:block;background:#000}
+.tile video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none}
+.track.dragging{scroll-snap-type:none;cursor:grabbing}
+.arrow{position:absolute;top:50%;transform:translateY(-50%);width:30px;height:30px;border-radius:50%;border:0;background:rgba(255,255,255,.85);color:#262626;display:grid;place-items:center;box-shadow:0 1px 4px rgba(0,0,0,.25);padding:0}
+.arrow svg{width:14px;height:14px}
+.arrow.prev{left:10px}
+.arrow.next{right:10px}
+.arrow:hover{background:#fff}
+.dots{display:flex;justify-content:center;align-items:center;gap:4px;padding:10px 0 0}
+.dots i{width:6px;height:6px;border-radius:50%;background:var(--dot);transition:background .15s}
+.dots i.on{background:var(--igblue)}
+.sheet .body{padding:16px}
+.sheet h3{margin:0 0 4px;font-size:15px}
+.meta{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 12px}
+.tag{font-size:11px;background:var(--chip);border-radius:999px;padding:3px 9px}
+.cap{white-space:pre-line;overflow-wrap:anywhere}
+.cap .none{color:var(--muted);font-style:italic}
+.hash{color:var(--accent);margin-top:8px;font-size:13px;overflow-wrap:anywhere}
+.sheet{position:relative}
+.xclose{position:absolute;top:10px;left:10px;z-index:3;width:30px;height:30px;border-radius:50%;border:0;background:rgba(0,0,0,.45);color:#fff;display:grid;place-items:center;padding:0}
+.xclose svg{width:14px;height:14px}
+.igbar{display:flex;align-items:center;gap:14px;padding:12px 16px 2px}
+.igbar svg{width:24px;height:24px;fill:none;stroke:var(--fg);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.igbar span{flex:1}
+.sheet .body{padding-top:8px}
+.cap b{font-weight:600;margin-right:4px}
+.when{font-size:12px;color:var(--muted);margin-top:12px}
+.meta .tag{display:inline-flex;align-items:center;gap:5px}
+.meta .tag i{width:7px;height:7px;border-radius:50%}
+.nlink{display:inline-block;font-size:12px;color:var(--muted);text-decoration:underline;text-underline-offset:2px;margin-top:2px}
+.review{position:sticky;bottom:0;background:var(--panel);border-top:1px solid var(--line);padding:10px 16px 14px}
+.rrow{display:flex;gap:10px}
+.rbtn{flex:1;text-decoration:none;min-width:0;display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 10px;border-radius:12px;font-weight:600;font-size:14px;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.rbtn svg{width:16px;height:16px;flex:none}
+.rbtn.approve{background:var(--igblue);border-color:var(--igblue);color:#fff}
+.rbtn.approved{background:var(--okbg);border-color:var(--okbg);color:var(--ok);cursor:default;opacity:1}
+.rbtn:disabled:not(.approved){opacity:.55;cursor:default}
+.rmsg{font-size:12px;min-height:0}
+.rmsg:not(:empty){margin-bottom:8px}
+.rmsg.ok{color:var(--ok)}
+.rmsg.err{color:var(--s-changes)}
+.btn{display:block;width:100%;margin-top:10px;padding:11px;border-radius:10px;text-align:center;font-weight:600;text-decoration:none;border:1px solid var(--line);background:none;color:var(--fg)}
+.btn.primary{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.small{font-size:12px;color:var(--muted);margin-top:6px}
+.upd{font-size:11px;color:var(--muted);margin-top:10px;text-align:right}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div class="handle" id="handle">&nbsp;</div>
+    <button class="pill" id="refresh" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 12a9 9 0 1 1-2.6-6.4M21 4v5h-5"/></svg><span>Reload</span></button>
+    <button class="icon" id="theme" type="button" aria-label="Switch light or dark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></button>
+    <button class="icon" id="settings" type="button" aria-label="Profile settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
+  </div>
+
+  <div id="error" class="msg" hidden></div>
+
+  <div id="main">
+    <div class="profile">
+      <div class="avatar skel" id="avatar"></div>
+      <div class="pinfo">
+        <div class="pname" id="pname">&nbsp;</div>
+        <div class="pcat" id="pcat"></div>
+        <div class="pbio" id="pbio"></div>
+        <a class="plink" id="plink" target="_blank" rel="noopener"></a>
+        <div class="stats"><b id="postcount">–</b> posts</div>
+      </div>
+    </div>
+    <div class="hls" id="hls"></div>
+    <div class="tabs"><div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18"/><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/></svg></div></div>
+    <div class="grid" id="grid"></div>
+    <div class="rows">
+      <span>Rows shown</span>
+      <div class="seg"><button type="button" id="r3" aria-pressed="true">9 posts</button><button type="button" id="r4" aria-pressed="false">12 posts</button></div>
+    </div>
+    <div class="legend" id="legend"></div>
+    <div class="upd" id="upd"></div>
+  </div>
+</div>
+
+<div class="scrim" id="postModal" hidden><div class="sheet" role="dialog" aria-modal="true" aria-label="Post">
+  <button class="xclose" type="button" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" data-close><path d="M6 6l12 12M18 6L6 18" data-close/></svg></button>
+  <div class="big" id="mArt"></div>
+  <div class="dots" id="mDots" hidden></div>
+  <div class="igbar" aria-hidden="true">
+    <svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg>
+    <svg viewBox="0 0 24 24"><path d="M20.5 12a8.5 8.5 0 1 1-3.3-6.7A8.4 8.4 0 0 1 20.5 12zM20.5 20.5l-2.2-4.2"/></svg>
+    <svg viewBox="0 0 24 24"><path d="M4 9h13l-3-3M20 15H7l3 3M17 9v4M7 15v-4"/></svg>
+    <svg viewBox="0 0 24 24"><path d="M21 3L3 10.5l7 2.5 2.5 7z M10 13l4.5-4.5"/></svg>
+    <span></span>
+    <svg viewBox="0 0 24 24"><path d="M6 3.5h12v17l-6-4.5-6 4.5z"/></svg>
+  </div>
+  <div class="body">
+    <div class="cap" id="mCap"></div>
+    <div class="hash" id="mHash"></div>
+    <div class="when" id="mWhen"></div>
+    <div class="meta" id="mMeta"></div>
+    <a class="nlink" id="mOpen" target="_blank" rel="noopener">View in Notion ↗</a>
+  </div>
+  <div class="review" id="mReview" hidden>
+    <div class="rmsg" id="mMsg" role="status" aria-live="polite"></div>
+    <div class="rrow">
+      <a class="rbtn" id="mChanges" target="_blank" rel="noopener" title="Opens this post in Notion so you can leave a comment"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 17.3V20h2.7l8-8-2.7-2.7-8 8zM18.7 8a1 1 0 0 0 0-1.4l-1.3-1.3a1 1 0 0 0-1.4 0l-1.1 1.1 2.7 2.7z"/></svg>Request changes</a>
+      <button class="rbtn approve" type="button" id="mApprove"></button>
+    </div>
+  </div>
+</div></div>
+
+<div class="scrim story-scrim" id="storyModal" hidden>
+  <div class="story" id="story" role="dialog" aria-modal="true" aria-label="Highlight">
+    <div class="media" id="stMedia"></div>
+    <div class="shade"></div>
+    <div class="tap" id="stTap" aria-hidden="true"></div>
+    <div class="bars" id="stBars"></div>
+    <div class="head">
+      <div class="av" id="stAv"></div>
+      <div class="nm" id="stName"></div>
+      <button class="sbtn" type="button" id="stSound" aria-label="Turn sound on" hidden></button>
+      <button class="sbtn" type="button" id="stClose" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+    <div class="paused" id="stPaused" hidden>Paused</div>
+  </div>
+</div>
+
+<div class="scrim" id="setModal" hidden><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sTitle"><div class="body">
+  <h3 id="sTitle">Profile, bio &amp; highlights</h3>
+  <p class="small">The profile photo, name, bio, link and up to 5 highlights are edited in the <b>Profile &amp; Highlights</b> page in Notion, so the whole team sees the same profile. Upload PNGs there, then press Reload here.</p>
+  <a class="btn primary" id="sOpen" target="_blank" rel="noopener">Open profile settings in Notion</a>
+  <button class="btn" type="button" data-close>Close</button>
+</div></div></div>
+
+<script>
+const STATUS = {
+  "Draft":"--s-draft","Ready for review":"--s-review","Changes requested":"--s-changes",
+  "Approved":"--s-approved","Scheduled":"--s-scheduled","Published":"--s-published"};
+const $ = (id) => document.getElementById(id);
+const params = new URLSearchParams(location.search);
+const code = params.get("code") || "";      // the private access code, when the owner set one
+const apiQuery = () => (code ? `code=${encodeURIComponent(code)}` : "");
+const store = {
+  get(k){ try{ return localStorage.getItem(k); }catch{ return null; } },
+  set(k,v){ try{ localStorage.setItem(k,v); }catch{} }
+};
+let data = null;
+let rows = store.get("rows") === "4" ? 4 : 3;
+const savedTheme = store.get("theme");
+if (savedTheme) document.documentElement.dataset.theme = savedTheme;
+
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const fmt = (d) => d ? new Date(d.length > 10 ? d : d + "T12:00:00").toLocaleDateString("en-GB",{day:"numeric",month:"short"}) : "No date";
+const initials = (s) => (s || "").trim().split(/\s+/).slice(0,2).map((w) => w[0]).join("").toUpperCase() || "•";
+const pinSvg = '<svg class="pin" viewBox="0 0 24 24" fill="currentColor"><path d="M16 3l5 5-3 1-4 4 1 5-2 2-4-4-5 5-1-1 5-5-4-4 2-2 5 1 4-4z"/></svg>';
+// Instagram's carousel mark: a filled square with a second square peeking out behind it.
+const multiSvg = '<svg class="multi" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4.5h9.5A3 3 0 0 1 20.5 7.5V17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><rect x="3" y="7.5" width="13.5" height="13.5" rx="2.6" fill="currentColor"/></svg>';
+const chevron = (d) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="${d}"/></svg>`;
+// Instagram's Reels mark, used on tiles that are a single video.
+const reelSvg = '<svg class="multi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><path d="M3 8.5h18M8.5 3l3 5.5M14 3l3 5.5"/><path d="M10 12.2v5.4l4.7-2.7z" fill="currentColor" stroke="none"/></svg>';
+// Slides as { url, type }. Also accepts the older list of plain image links.
+const slidesOf = (post) => {
+  const s = (post.slides || []).map((x) => (typeof x === "string" ? { url: x, type: "image" } : x)).filter((x) => x && x.url);
+  if (s.length) return s;
+  return post.cover ? [{ url: post.cover, type: "image" }] : [];
+};
+
+$("legend").innerHTML = Object.entries(STATUS).map(([n,v]) => `<span><i style="background:var(${v})"></i>${n}</span>`).join("");
+
+function skeleton(){
+  $("grid").innerHTML = Array.from({length: rows * 3}, () => '<div class="tile skel"></div>').join("");
+}
+
+function showError(title, text){
+  $("error").innerHTML = `<b>${esc(title)}</b>${esc(text)}`;
+  $("error").hidden = false;
+  $("main").hidden = true;
+}
+
+async function load(){
+  const btn = $("refresh"); btn.classList.add("spin"); btn.querySelector("span").textContent = "Loading";
+  if (!data) skeleton();
+  try{
+    const res = await fetch(`/api/feed?${apiQuery()}&t=${Date.now()}`);
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok) throw Object.assign(new Error(body.message || "Could not load the preview."), { title: res.status === 404 ? "Client not found" : "Preview unavailable" });
+    data = body;
+    $("error").hidden = true; $("main").hidden = false;
+    render();
+  }catch(e){
+    if (data){ $("upd").textContent = "Couldn't refresh. Showing the last version."; }
+    else showError(e.title || "Preview unavailable", e.message || "Check your connection and press Reload.");
+  }finally{
+    btn.classList.remove("spin"); btn.querySelector("span").textContent = "Reload";
+  }
+}
+
+function render(){
+  const { profile: p, highlights, posts, client: c } = data;
+  if (c.accent) document.documentElement.style.setProperty("--accent", c.accent);
+  document.title = `${p.handle ? "@" + p.handle : c.name} · Grid Preview`;
+  $("handle").textContent = p.handle ? "@" + p.handle : c.name;
+  const av = $("avatar"); av.classList.remove("skel");
+  av.innerHTML = p.photo ? `<img src="${esc(p.photo)}" alt="">` : esc(initials(p.name || c.name));
+  $("pname").textContent = p.name || c.name;
+  $("pcat").textContent = p.category || "";
+  $("pbio").textContent = p.bio || "";
+  const link = $("plink");
+  if (p.link){ link.href = p.link; link.textContent = p.link.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, ""); link.hidden = false; } else link.hidden = true;
+  $("postcount").textContent = posts.length;
+
+  $("hls").hidden = !highlights.length;
+  $("hls").innerHTML = highlights.map((h, k) => {
+    const inner = `<div class="c">${h.cover ? `<img src="${esc(h.cover)}" alt="">` : `<i>${esc(initials(h.name))}</i>`}</div><small>${esc(h.name)}</small>`;
+    const n = (h.stories || []).length;
+    // Highlights with stories open the viewer; empty ones are shown but not clickable.
+    return n
+      ? `<button class="hl" type="button" data-h="${k}" aria-label="${esc(h.name)} highlight, ${n} ${n === 1 ? "story" : "stories"}">${inner}</button>`
+      : `<div class="hl">${inner}</div>`;
+  }).join("");
+
+  const list = posts.slice(0, rows * 3);
+  $("grid").innerHTML = list.length ? list.map((post, i) => {
+    const s = slidesOf(post), n = s.length;
+    const isReel = n === 1 && s[0].type === "video";
+    const label = n > 1 ? `, carousel of ${n}` : isReel ? ", video" : "";
+    const tileMedia = post.cover
+      ? `<img src="${esc(post.cover)}" alt="" loading="lazy">`
+      : post.coverVideo
+        // No image: show the video's first frame (#t=0.1 makes browsers load it).
+        ? `<video src="${esc(post.coverVideo)}#t=0.1" muted playsinline preload="metadata" tabindex="-1"></video>`
+        : `<div class="ph"><b>${esc(post.title || "Untitled")}</b><span>${fmt(post.date)} · no cover yet</span></div>`;
+    return `<button class="tile" type="button" data-i="${i}" aria-label="${esc(post.title)}, ${fmt(post.date)}${label}${post.status ? ", " + esc(post.status) : ""}">
+      ${tileMedia}
+      ${post.pinned ? pinSvg : ""}
+      ${n > 1 ? multiSvg : isReel ? reelSvg : ""}
+      ${post.status && STATUS[post.status] ? `<span class="dot" style="background:var(${STATUS[post.status]})"></span>` : ""}
+    </button>`;
+  }).join("")
+    : `<div class="empty">No posts on the grid yet. In Notion, tick <b>Show on grid</b> on a post and press Reload.</div>`;
+
+  $("r3").setAttribute("aria-pressed", rows === 3);
+  $("r4").setAttribute("aria-pressed", rows === 4);
+  $("upd").textContent = "Updated " + new Date(data.updated).toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"});
+}
+
+function openModal(id){ $(id).hidden = false; }
+function closeAll(){
+  document.querySelectorAll(".scrim").forEach((s) => s.hidden = true);
+  $("mArt").querySelectorAll("video").forEach((v) => v.pause());
+  stopStory();
+  openPost = null;
+}
+document.querySelectorAll(".scrim").forEach((s) => s.addEventListener("click", (e) => {
+  if (e.target === s || e.target.hasAttribute("data-close")) closeAll();
+}));
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") return closeAll();
+  if (st){
+    if (e.key === "ArrowRight") storyNext();
+    if (e.key === "ArrowLeft") storyPrev();
+    if (e.key === " "){ e.preventDefault(); setStoryPaused(!st.paused, true); }
+    return;
+  }
+  if ($("postModal").hidden || !car) return;
+  if (e.key === "ArrowRight") goTo(car.i + 1);
+  if (e.key === "ArrowLeft") goTo(car.i - 1);
+});
+
+$("grid").addEventListener("click", (e) => {
+  const b = e.target.closest(".tile[data-i]"); if (!b || !data) return;
+  const post = data.posts[+b.dataset.i];
+  openPost = post;
+  $("postModal").querySelector(".sheet").setAttribute("aria-label", post.title || "Post");
+  const handle = data.profile?.handle ? "@" + data.profile.handle : (data.client?.name || "");
+  const cap = $("mCap");
+  cap.innerHTML = `<b>${esc(handle)}</b>${post.caption ? esc(post.caption) : '<span class="none">Caption coming soon.</span>'}`;
+  $("mHash").textContent = post.hashtags || "";
+  $("mWhen").textContent = [longDate(post.date), post.title].filter(Boolean).join(" · ");
+  $("mOpen").href = post.url;
+  $("mMsg").textContent = ""; $("mMsg").className = "rmsg";
+  paintPostMeta();
+  paintReview();
+  openModal("postModal");
+  $("postModal").querySelector(".sheet").scrollTop = 0;
+  buildCarousel(post);
+});
+
+// ---------- Approve / Request changes ----------
+// Approve sets the Status in Notion. Request changes opens the post in Notion to comment there.
+const REVIEWABLE = ["Ready for review", "Changes requested", "Approved"];
+const checkSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+let openPost = null;
+let busy = false;
+
+const longDate = (d) => d ? new Date(d.length > 10 ? d : d + "T12:00:00").toLocaleDateString("en-GB", { day: "numeric", month: "long" }) : "";
+
+function paintPostMeta(){
+  const p = openPost; if (!p) return;
+  const chips = [];
+  if (p.status) chips.push(`<span class="tag"><i style="background:var(${STATUS[p.status] || "--muted"})"></i>${esc(p.status)}</span>`);
+  if (p.format) chips.push(`<span class="tag">${esc(p.format)}</span>`);
+  if (p.campaign) chips.push(`<span class="tag">${esc(p.campaign)}</span>`);
+  if (p.pinned) chips.push(`<span class="tag">Pinned</span>`);
+  $("mMeta").innerHTML = chips.join("");
+}
+
+// Buttons show for posts waiting on approval, and stay after approval so a mistake can be undone.
+function paintReview(){
+  const p = openPost;
+  const show = !!(data && data.review && p && REVIEWABLE.includes(p.status));
+  $("mReview").hidden = !show;
+  if (!show) return;
+  const approved = p.status === "Approved";
+  const a = $("mApprove");
+  a.className = "rbtn " + (approved ? "approved" : "approve");
+  a.innerHTML = `${checkSvg}${approved ? "Approved" : busy === "approve" ? "Approving…" : "Approve"}`;
+  a.disabled = approved || !!busy;
+  a.setAttribute("aria-pressed", approved);
+  $("mChanges").href = p.url;
+}
+
+function setMsg(id, textMsg, kind){ const m = $(id); m.textContent = textMsg || ""; m.className = "rmsg" + (kind ? " " + kind : ""); }
+
+async function approve(){
+  const p = openPost; if (!p || busy || p.status === "Approved") return;
+  busy = "approve"; paintReview(); setMsg("mMsg", "");
+  try{
+    const res = await fetch(`/api/feed?${apiQuery()}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ pageId: p.id, action: "approve" }),
+    });
+    const b = await res.json().catch(() => ({}));
+    if (!res.ok){
+      if (b.status) p.status = b.status;          // e.g. the team already scheduled it
+      throw new Error(b.message || "Couldn't approve. Check your connection and try again.");
+    }
+    p.status = b.status;
+    busy = false;
+    render(); paintPostMeta(); paintReview();
+    setMsg("mMsg", "Approved. Thank you!", "ok");
+  }catch(err){
+    busy = false;
+    paintPostMeta(); paintReview();
+    setMsg("mMsg", err.message, "err");
+  }
+}
+
+$("mApprove").onclick = approve;
+$("mChanges").addEventListener("click", () => setMsg("mMsg", "Opened in Notion. Leave your comment on the post there."));
+
+// ---------- Carousel in the post popup ----------
+const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+let car = null; // { track, n, i }
+
+function buildCarousel(post){
+  const s = slidesOf(post);
+  const art = $("mArt"), dots = $("mDots");
+  art.innerHTML = s.length
+    ? `<div class="track" id="mTrack">${s.map((m, k) => m.type === "video"
+        ? `<div class="slide vid"><video src="${esc(m.url)}" muted playsinline loop controls preload="metadata" aria-label="Video, slide ${k + 1} of ${s.length}"></video></div>`
+        : `<div class="slide"><img src="${esc(m.url)}" alt="Slide ${k + 1} of ${s.length}" draggable="false"${k ? ' loading="lazy"' : ""}></div>`).join("")}</div>`
+      + (s.length > 1
+        ? `<button class="arrow prev" type="button" aria-label="Previous slide">${chevron("M15 5l-7 7 7 7")}</button>`
+        + `<button class="arrow next" type="button" aria-label="Next slide">${chevron("M9 5l7 7-7 7")}</button>`
+        : "")
+    : "";
+  dots.hidden = s.length < 2;
+  dots.innerHTML = s.length > 1 ? s.map(() => "<i></i>").join("") : "";
+  car = s.length ? { track: $("mTrack"), n: s.length, i: 0 } : null;
+  if (!car) return;
+  car.track.scrollLeft = 0;
+  if (car.n > 1){
+    car.track.addEventListener("scroll", onSlideScroll, { passive: true });
+    // A finger or trackpad takes over from any arrow-click animation.
+    const release = () => { if (car) car.target = null; };
+    car.track.addEventListener("touchstart", release, { passive: true });
+    car.track.addEventListener("wheel", release, { passive: true });
+    art.querySelector(".prev").onclick = () => goTo(car.i - 1);
+    art.querySelector(".next").onclick = () => goTo(car.i + 1);
+    enableMouseDrag(car.track);
+  }
+  art.querySelectorAll("video").forEach((v) => { v.muted = true; });
+  paintCarousel();
+  syncVideos();
+}
+
+// The video on screen plays (muted, like Instagram); every other one pauses.
+function syncVideos(){
+  const open = !$("postModal").hidden;
+  $("mArt").querySelectorAll(".slide").forEach((slide, k) => {
+    const v = slide.querySelector("video");
+    if (!v) return;
+    if (open && car && k === car.i){ if (!reduceMotion) v.play().catch(() => {}); }
+    else v.pause();
+  });
+}
+
+function goTo(i){
+  if (!car) return;
+  i = Math.max(0, Math.min(car.n - 1, i));
+  // Remember where we're heading so quick repeated clicks keep counting from there.
+  car.target = i; car.i = i; paintCarousel();
+  car.track.scrollTo({ left: i * car.track.clientWidth, behavior: reduceMotion ? "auto" : "smooth" });
+}
+
+function onSlideScroll(){
+  if (!car) return;
+  const w = car.track.clientWidth;
+  if (car.target != null){
+    if (Math.abs(car.track.scrollLeft - car.target * w) > 2) return;
+    car.target = null;
+  }
+  const i = Math.round(car.track.scrollLeft / w);
+  if (i !== car.i){ car.i = i; paintCarousel(); }
+}
+
+function paintCarousel(){
+  if (!car || car.n < 2) return;
+  const art = $("mArt");
+  art.querySelector(".prev").hidden = car.i === 0;
+  art.querySelector(".next").hidden = car.i === car.n - 1;
+  [...$("mDots").children].forEach((d, k) => d.classList.toggle("on", k === car.i));
+  syncVideos();
+}
+
+// Touch and trackpads swipe natively; this lets a mouse drag the slides too.
+function enableMouseDrag(track){
+  let down = false, startX = 0, lastX = 0, startLeft = 0;
+  track.onpointerdown = (e) => {
+    // Leave the video's own controls (play, sound, scrubbing) alone.
+    if (e.pointerType !== "mouse" || e.button !== 0 || e.target.closest("video")) return;
+    down = true; startX = lastX = e.clientX; startLeft = track.scrollLeft;
+    track.classList.add("dragging");
+    track.setPointerCapture(e.pointerId);
+  };
+  track.onpointermove = (e) => {
+    if (!down) return;
+    lastX = e.clientX;
+    track.scrollLeft = startLeft - (lastX - startX);
+  };
+  const end = () => {
+    if (!down) return;
+    down = false;
+    track.classList.remove("dragging");
+    const w = track.clientWidth, dx = lastX - startX;
+    let target = Math.round(startLeft / w);
+    if (dx < -w * 0.15) target++; else if (dx > w * 0.15) target--;
+    goTo(target);
+  };
+  track.onpointerup = end;
+  track.onpointercancel = end;
+}
+
+// ---------- Highlight story viewer ----------
+const IMAGE_MS = 5000;      // how long a photo story stays up, like Instagram
+const HOLD_MS = 220;        // pressing longer than this pauses instead of skipping
+const soundOnSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5L6 9H3v6h3l5 4V5z" fill="currentColor"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg>';
+const soundOffSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5L6 9H3v6h3l5 4V5z" fill="currentColor"/><path d="M16 9l5 6M21 9l-5 6"/></svg>';
+let st = null;              // { h, i, paused, muted, elapsed, last, raf }
+let press = null;
+
+$("hls").addEventListener("click", (e) => {
+  const b = e.target.closest("button.hl[data-h]");
+  if (b && data) openStory(+b.dataset.h);
+});
+
+function openStory(k){
+  const h = data.highlights[k];
+  if (!h || !h.stories || !h.stories.length) return;
+  closeAll();
+  st = { h, i: 0, paused: false, muted: true, elapsed: 0, last: performance.now(), raf: 0 };
+  $("story").setAttribute("aria-label", `${h.name} highlight`);
+  $("stName").textContent = h.name;
+  $("stAv").innerHTML = h.cover ? `<img src="${esc(h.cover)}" alt="">` : esc(initials(h.name));
+  $("stBars").innerHTML = h.stories.map(() => "<span><b></b></span>").join("");
+  $("stPaused").hidden = true;
+  openModal("storyModal");
+  showFrame(0);
+  st.raf = requestAnimationFrame(tick);
+}
+
+const storyVideo = () => $("stMedia").querySelector("video");
+
+function showFrame(i){
+  st.i = i; st.elapsed = 0; st.last = performance.now();
+  const m = st.h.stories[i], n = st.h.stories.length;
+  $("stMedia").innerHTML = m.type === "video"
+    ? `<video src="${esc(m.url)}" playsinline preload="auto" aria-label="${esc(st.h.name)}, story ${i + 1} of ${n}"></video>`
+    : `<img src="${esc(m.url)}" alt="${esc(st.h.name)}, story ${i + 1} of ${n}">`;
+  const v = storyVideo();
+  if (v){
+    v.muted = st.muted;
+    v.onended = storyNext;
+    if (!st.paused) v.play().catch(() => { st.muted = v.muted = true; paintSound(); v.play().catch(() => {}); });
+  }
+  const next = st.h.stories[i + 1];
+  if (next && next.type === "image"){ const im = new Image(); im.src = next.url; }
+  $("stSound").hidden = !v;
+  paintSound();
+  paintBars(0);
+}
+
+function paintBars(progress){
+  [...$("stBars").children].forEach((s, k) => {
+    s.firstElementChild.style.width = (k < st.i ? 100 : k > st.i ? 0 : progress * 100) + "%";
+  });
+}
+
+function tick(now){
+  if (!st) return;
+  const v = storyVideo();
+  let p;
+  if (v) p = v.duration ? v.currentTime / v.duration : 0;
+  else {
+    if (!st.paused) st.elapsed += now - st.last;
+    p = st.elapsed / IMAGE_MS;
+  }
+  st.last = now;
+  if (!v && p >= 1){
+    storyNext();
+    if (!st) return;
+  } else paintBars(Math.min(1, p));
+  st.raf = requestAnimationFrame(tick);
+}
+
+function storyNext(){
+  if (!st) return;
+  if (st.i < st.h.stories.length - 1) showFrame(st.i + 1);
+  else closeAll();
+}
+function storyPrev(){ if (st) showFrame(Math.max(0, st.i - 1)); }
+
+function setStoryPaused(paused, showLabel){
+  if (!st) return;
+  st.paused = paused;
+  st.last = performance.now();
+  $("stPaused").hidden = !(paused && showLabel);
+  const v = storyVideo();
+  if (v){ if (paused) v.pause(); else v.play().catch(() => {}); }
+}
+
+function stopStory(){
+  if (!st) return;
+  cancelAnimationFrame(st.raf);
+  const v = storyVideo(); if (v) v.pause();
+  $("stMedia").innerHTML = "";
+  st = null; press = null;
+}
+
+function paintSound(){
+  if (!st) return;
+  $("stSound").innerHTML = st.muted ? soundOffSvg : soundOnSvg;
+  $("stSound").setAttribute("aria-label", st.muted ? "Turn sound on" : "Turn sound off");
+}
+$("stSound").onclick = () => {
+  if (!st) return;
+  st.muted = !st.muted;
+  const v = storyVideo(); if (v) v.muted = st.muted;
+  paintSound();
+};
+$("stClose").onclick = closeAll;
+
+// Tap the left third to go back, anywhere else to go forward; press and hold to pause.
+$("stTap").addEventListener("pointerdown", (e) => {
+  if (!st) return;
+  press = { x: e.clientX, held: false };
+  press.timer = setTimeout(() => { if (press){ press.held = true; setStoryPaused(true, false); } }, HOLD_MS);
+});
+function endPress(e, cancelled){
+  if (!press) return;
+  clearTimeout(press.timer);
+  const p = press; press = null;
+  if (p.held){ setStoryPaused(false); return; }
+  if (cancelled) return;
+  const r = $("story").getBoundingClientRect();
+  if (e.clientX - r.left < r.width / 3) storyPrev(); else storyNext();
+}
+$("stTap").addEventListener("pointerup", (e) => endPress(e, false));
+$("stTap").addEventListener("pointercancel", (e) => endPress(e, true));
+$("stTap").addEventListener("pointerleave", (e) => endPress(e, true));
+
+$("settings").onclick = () => {
+  const url = data?.client?.settingsUrl;
+  $("sOpen").hidden = !url; if (url) $("sOpen").href = url;
+  openModal("setModal");
+};
+$("refresh").onclick = load;
+$("r3").onclick = () => { rows = 3; store.set("rows","3"); data ? render() : skeleton(); };
+$("r4").onclick = () => { rows = 4; store.set("rows","4"); data ? render() : skeleton(); };
+$("theme").onclick = () => {
+  const r = document.documentElement;
+  const dark = r.dataset.theme ? r.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+  r.dataset.theme = dark ? "light" : "dark";
+  store.set("theme", r.dataset.theme);
+};
+load();
+</script>
+</body>
+</html>

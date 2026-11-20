@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Grid Preview Setup</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap">
+<style>
+/* One calm column: a checklist the buyer reads top to bottom, then their link to copy. */
+:root{
+  --bg:#f6f6f4; --panel:#ffffff; --fg:#151515; --muted:#6b6b6b; --line:#e7e7e3;
+  --ok:#2f8a55; --okbg:#e6f3ea; --bad:#c2410c; --badbg:#fdeee6; --off:#8a8a8a; --offbg:#efefec; --btn:#151515; --btnfg:#ffffff;
+  --ui:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  color-scheme:light;
+}
+:root[data-theme="dark"]{--bg:#101010; --panel:#181818; --fg:#f2f2f2; --muted:#a1a1a1; --line:#2a2a2a; --ok:#7fd3a1; --okbg:#173022; --bad:#fb923c; --badbg:#3a2110; --off:#9a9a9a; --offbg:#222; --btn:#f2f2f2; --btnfg:#111; color-scheme:dark}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#101010; --panel:#181818; --fg:#f2f2f2; --muted:#a1a1a1; --line:#2a2a2a; --ok:#7fd3a1; --okbg:#173022; --bad:#fb923c; --badbg:#3a2110; --off:#9a9a9a; --offbg:#222; --btn:#f2f2f2; --btnfg:#111; color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.55 var(--ui);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:40px}
+main{max-width:620px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+.brand{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
+h1{font-size:28px;line-height:1.2;margin:4px 0 0;text-wrap:balance;letter-spacing:-.01em}
+.lede{color:var(--muted);margin:6px 0 0;max-width:60ch}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px}
+ol{list-style:none;margin:0;padding:0}
+li{display:flex;gap:14px;padding:16px 18px;border-top:1px solid var(--line)}
+li:first-child{border-top:0}
+.mark{flex:none;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:13px;font-weight:700}
+.mark.ok{background:var(--okbg);color:var(--ok)}
+.mark.bad{background:var(--badbg);color:var(--bad)}
+.mark.off,.mark.wait{background:var(--offbg);color:var(--off)}
+.item{min-width:0}
+.item b{display:block;font-weight:600}
+.item p{margin:2px 0 0;color:var(--muted);font-size:14px;overflow-wrap:anywhere}
+.item p.bad{color:var(--bad)}
+.linkbox{padding:18px;display:flex;flex-direction:column;gap:10px}
+.linkbox h2{font-size:15px;margin:0}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+code{flex:1 1 260px;min-width:0;font:13px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:11px 12px;overflow-wrap:anywhere;user-select:all}
+button{font:inherit;font-weight:600;border:0;border-radius:10px;padding:11px 16px;background:var(--btn);color:var(--btnfg);cursor:pointer}
+button.ghost{background:transparent;color:var(--fg);border:1px solid var(--line)}
+button:focus-visible{outline:2px solid var(--fg);outline-offset:2px}
+.hint{font-size:13px;color:var(--muted);margin:0}
+.actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+footer{font-size:13px;color:var(--muted)}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="brand">Instagram Grid Preview · by Made Interactive</div>
+    <h1>Setup check</h1>
+    <p class="lede">This page checks that your preview can reach your Notion template. Fix anything marked in orange, then press <b>Check again</b>.</p>
+  </header>
+
+  <section class="card" aria-labelledby="steps-title">
+    <h2 id="steps-title" hidden>Checks</h2>
+    <ol id="checks">
+      <li><span class="mark wait">…</span><div class="item"><b>Checking your setup</b><p>One moment.</p></div></li>
+    </ol>
+  </section>
+
+  <section class="card linkbox" id="linkCard" hidden>
+    <h2>Your preview link</h2>
+    <div class="row"><code id="link"></code><button type="button" id="copy">Copy</button></div>
+    <p class="hint" id="linkHint"></p>
+  </section>
+
+  <div class="actions">
+    <button type="button" class="ghost" id="again">Check again</button>
+    <span class="hint" id="when"></span>
+  </div>
+
+  <footer id="help">In Notion, paste your link with <b>/embed</b> on your preview page. Need help? See the guide that came with your purchase.</footer>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+function row(state, title, text){
+  const icon = { ok: "✓", bad: "!", off: "–", wait: "…" }[state];
+  return `<li><span class="mark ${state}" aria-hidden="true">${icon}</span><div class="item"><b>${esc(title)}</b><p class="${state === "bad" ? "bad" : ""}">${esc(text)}</p></div></li>`;
+}
+
+async function check(){
+  $("checks").innerHTML = row("wait", "Checking your setup", "One moment.");
+  $("linkCard").hidden = true;
+  let r;
+  try{
+    const res = await fetch(`/api/setup?t=${Date.now()}`);
+    r = await res.json();
+  }catch{
+    $("checks").innerHTML = row("bad", "Couldn't reach this site's preview service", "Make sure the site finished deploying in Netlify, then press Check again.");
+    return;
+  }
+  const problem = (step) => (r.problems || []).find((p) => p.step === step);
+  const notion = problem("notion");
+  const rows = [];
+
+  if (r.license === "ok") rows.push(row("ok", "License active", "Your LICENSE_KEY is valid. Thank you for your purchase."));
+  if (r.license === "unverified") rows.push(row("off", "License not checked", "Gumroad couldn't be reached just now. Your preview keeps working; press Check again later."));
+  if (r.license === "bad") rows.push(row("bad", "License needed", r.licenseMessage || "Add LICENSE_KEY in Netlify."));
+  rows.push(r.token ? row("ok", "Notion key added", "NOTION_TOKEN is set in Netlify.")
+                    : row("bad", "Notion key missing", problem("token")?.message || "Add NOTION_TOKEN in Netlify."));
+  if (r.token && notion){
+    rows.push(row("bad", "Notion connection", notion.message));
+  } else if (r.token){
+    const db = (kind, title, optional) => {
+      const p = problem(kind), d = r[kind];
+      if (d) return row("ok", `${title} found`, `"${d.name}"${d.rows != null ? ` · ${d.rows} ${d.rows === 1 ? "row" : "rows"}` : ""}`);
+      if (p) return row("bad", `${title} not found`, p.message);
+      return row("off", `${title} not found`, optional ? "Optional. Your profile shows without highlights." : "");
+    };
+    rows.push(db("content", "Content database"));
+    rows.push(db("profile", "Profile database"));
+    rows.push(db("highlights", "Highlights database", true));
+  }
+  rows.push(r.accessCode
+    ? row("ok", "Private link and approvals on", "ACCESS_CODE is set. Only links with your code open the preview, and clients can approve posts.")
+    : row("off", "Private link and approvals off", "Optional. Add ACCESS_CODE in Netlify to make your link private and show the Approve button."));
+  $("checks").innerHTML = rows.join("");
+
+  const ready = r.license !== "bad" && r.token && !notion && r.content && r.profile && !(r.problems || []).length;
+  if (ready){
+    const base = location.origin + "/";
+    $("link").textContent = r.accessCode ? base + "?code=YOUR_ACCESS_CODE" : base;
+    $("linkHint").innerHTML = r.accessCode
+      ? "Replace <b>YOUR_ACCESS_CODE</b> with the code you chose in Netlify, then paste the link into Notion with /embed."
+      : "Paste this link into your Notion preview page with /embed.";
+    $("linkCard").hidden = false;
+  }
+  $("when").textContent = "Checked " + new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+}
+
+$("again").onclick = check;
+$("copy").onclick = async () => {
+  const t = $("link").textContent;
+  try { await navigator.clipboard.writeText(t); $("copy").textContent = "Copied"; }
+  catch { const r = document.createRange(); r.selectNodeContents($("link")); const s = getSelection(); s.removeAllRanges(); s.addRange(r); $("copy").textContent = "Press ⌘C / Ctrl+C"; }
+  setTimeout(() => { $("copy").textContent = "Copy"; }, 2000);
+};
+check();
+</script>
+</body>
+</html>

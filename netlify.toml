@@ -1,0 +1,23 @@
+# Instagram Grid Preview for Notion, by Made Interactive.
+
+[build]
+  publish = "public"
+  functions = "netlify/functions"
+
+# Asked for when someone clicks "Deploy to Netlify".
+[template.environment]
+  LICENSE_KEY = "Your license key (from your Gumroad receipt)"
+  NOTION_TOKEN = "Your Notion connection key (API token / Internal Integration Secret)"
+  ACCESS_CODE = "Optional: a private code of your choice. Makes your link private and turns on the Approve button"
+
+[[redirects]]
+  from = "/setup"
+  to = "/setup.html"
+  status = 200
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    X-Content-Type-Options = "nosniff"
+    X-Robots-Tag = "noindex, nofollow"
