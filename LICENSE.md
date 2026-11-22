@@ -1,7 +1,7 @@
-# Instagram Grid Preview for Notion: License
+# Instagram Grid Preview & Content Calendar for Notion: License
 
 **Seller:** Made Interactive ([LEGAL NAME / BUSINESS DETAILS]), [CONTACT EMAIL]
-**Product:** Instagram Grid Preview for Notion, including the widget code, the Notion template, the setup guide and any updates ("the Product").
+**Product:** Instagram Grid Preview & Content Calendar for Notion, including the widget code, the Notion template, the setup guide and any updates ("the Product").
 **Version of this license:** November 2026
 
 This is not open-source software. The code is publicly visible so the "Deploy to Netlify" button can work, but you may only use it under this license, which you receive when you buy the Product.
@@ -37,7 +37,7 @@ Updates are provided when available, at Made Interactive's discretion, and you i
 
 The Product works with Notion, GitHub, Netlify and Gumroad, which are run by other companies under their own terms and prices. Made Interactive isn't responsible for changes, outages or costs on those services.
 
-Instagram Grid Preview for Notion is not affiliated with, endorsed by or sponsored by Instagram, Meta, Notion or Netlify. Instagram is a trademark of Instagram, LLC.
+Instagram Grid Preview & Content Calendar for Notion is not affiliated with, endorsed by or sponsored by Instagram, Meta, Notion or Netlify. Instagram is a trademark of Instagram, LLC.
 
 ## 6. No warranty and limitation of liability
 
